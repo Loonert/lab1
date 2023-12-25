@@ -1,258 +1,138 @@
-﻿using System;
+﻿using lab1;
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Reflection;
 
-class Figure
+public class Program
 {
-    public string Owner { get; set; }
-    public double Density { get; set; }
-
-    public Figure(string owner, double density)
+    private static void AddCylinder(string[] commandParts, Container container, int lineCounter)
     {
-        Owner = owner;
-        Density = density;
-    }
-
-    public virtual void Print(string operation = "")
-    {
-
-    }
-}
-
-class Node
-{
-    public Figure Figure { get; set; }
-    public Node Prev { get; set; }
-    public Node Next { get; set; }
-
-    public Node(Figure figure)
-    {
-        Figure = figure;
-        Prev = null;
-        Next = null;
-    }
-}
-
-class Sphere : Figure
-{
-    public double Radius { get; set; }
-
-    public Sphere(double radius, double density, string owner)
-        : base(owner, density)
-    {
-        Radius = radius;
-    }
-
-    public override void Print(string operation)
-    {
-        Console.WriteLine($"{operation} Sphere: Radius={Radius}, Density={Density}, Owner={Owner}");
-    }
-}
-
-class Parallelepiped : Figure
-{
-    public double A { get; set; }
-    public double B { get; set; }
-    public double C { get; set; }
-
-    public Parallelepiped(double a, double b, double c, double density, string owner)
-        : base(owner, density)
-    {
-        A = a;
-        B = b;
-        C = c;
-    }
-
-    public override void Print(string operation)
-    {
-        Console.WriteLine($"{operation} Parallelepiped: a={A}, b={B}, c={C}, Density={Density}, Owner={Owner}");
-    }
-}
-
-class Cylinder : Figure
-{
-    public double X { get; set; }
-    public double Y { get; set; }
-    public double Z { get; set; }
-    public double Radius { get; set; }
-    public double Height { get; set; }
-
-    public Cylinder(double x, double y, double z, double radius, double height, double density, string owner)
-        : base(owner, density)
-    {
-        X = x;
-        Y = y;
-        Z = z;
-        Radius = radius;
-        Height = height;
-    }
-
-    public override void Print(string operation)
-    {
-        Console.WriteLine($"{operation} Cylinder: (x={X}, y={Y}, z={Z}), Radius={Radius}, Height={Height}, Density={Density}, Owner={Owner}");
-    }
-}
-
-class Container
-{
-    private Node head;
-    private Node tail;
-
-    public Container()
-    {
-        head = null;
-        tail = null;
-    }
-
-    public void AddFigure(Figure figure)
-    {
-        Node newNode = new Node(figure);
-        if (head == null)
+        if (double.TryParse(commandParts[2].Replace(',', '.'), NumberStyles.Any, CultureInfo.InvariantCulture, out double x) &&
+                double.TryParse(commandParts[3].Replace(',', '.'), NumberStyles.Any, CultureInfo.InvariantCulture, out double y) &&
+                double.TryParse(commandParts[4].Replace(',', '.'), NumberStyles.Any, CultureInfo.InvariantCulture, out double z) &&
+                double.TryParse(commandParts[5].Replace(',', '.'), NumberStyles.Any, CultureInfo.InvariantCulture, out double radius) &&
+                double.TryParse(commandParts[6].Replace(',', '.'), NumberStyles.Any, CultureInfo.InvariantCulture, out double height) &&
+                double.TryParse(commandParts[7].Replace(',', '.'), NumberStyles.Any, CultureInfo.InvariantCulture, out double density))
         {
-            head = newNode;
-            tail = newNode;
+            string owner = commandParts[8];
+            Cylinder cylinder = new Cylinder(x, y, z, radius, height, density, owner);
+            container.AddFigure(cylinder);
         }
         else
         {
-            tail.Next = newNode;
-            newNode.Prev = tail;
-            tail = newNode;
+            Console.WriteLine($"Ошибка: Неверные числовые параметры для команды 'add cylinder' в строке {lineCounter}.");
         }
-        figure.Print("Added");
     }
-
-    public void RemoveFiguresByCondition(string condition, int lineNumber)
+    private static void AddParallelepiped(string[] commandParts, Container container, int lineCounter)
     {
-        Node current = head;
-        while (current != null)
+        if (double.TryParse(commandParts[2].Replace(',', '.'), NumberStyles.Any, CultureInfo.InvariantCulture, out double a) &&
+                double.TryParse(commandParts[3].Replace(',', '.'), NumberStyles.Any, CultureInfo.InvariantCulture, out double b) &&
+                double.TryParse(commandParts[4].Replace(',', '.'), NumberStyles.Any, CultureInfo.InvariantCulture, out double c) &&
+                double.TryParse(commandParts[5].Replace(',', '.'), NumberStyles.Any, CultureInfo.InvariantCulture, out double density))
         {
-            bool shouldRemove = CheckCondition(current.Figure, condition);
-            if (shouldRemove)
+            string owner = commandParts[6];
+            Parallelepiped parallelepiped = new Parallelepiped(a, b, c, density, owner);
+            container.AddFigure(parallelepiped);
+        }
+        else
+        {
+            Console.WriteLine($"Ошибка: Неверные числовые параметры для команды 'add parallelepiped' в строке {lineCounter}.");
+        }
+    }
+    private static void AddSphere(string[] commandParts, Container container, int lineCounter)
+    {
+        if (double.TryParse(commandParts[2].Replace(',', '.'), NumberStyles.Any, CultureInfo.InvariantCulture, out double radius) &&
+                double.TryParse(commandParts[3].Replace(',', '.'), NumberStyles.Any, CultureInfo.InvariantCulture, out double density))
+        {
+            string owner = commandParts[4];
+            Sphere sphere = new Sphere(radius, density, owner);
+            container.AddFigure(sphere);
+        }
+        else
+        {
+            Console.WriteLine($"Ошибка: Неверные числовые параметры для команды 'add sphere' в строке {lineCounter}.");
+        }
+    }
+    
+    private static void AddFigure(string[] commandParts, int lineCounter, Container container)
+    {
+        int MinCommandLen = 2;
+        int SphereCommandLen = 5;
+        int ParallelepipedCommandLen = 7;
+        int CylinderCommandLen = 7;
+
+        if (commandParts.Length > MinCommandLen)
+        {
+            string type = commandParts[1];
+
+            if (type == "sphere" && commandParts.Length == SphereCommandLen)
             {
-                current.Figure.Print($"Deleted because {condition} в строке {lineNumber}");
-                Node nodeToRemove = current;
-                current = current.Next;
-                RemoveNode(nodeToRemove);
+                AddSphere(commandParts, container, lineCounter);
+            }
+            else if (type == "parallelepiped" && commandParts.Length == ParallelepipedCommandLen)
+            {
+                AddParallelepiped(commandParts, container, lineCounter);
+            }
+            else if (type == "cylinder" && commandParts.Length == CylinderCommandLen)
+            {
+                AddCylinder(commandParts, container, lineCounter);
             }
             else
             {
-                current = current.Next;
+                Console.WriteLine($"Ошибка: Неизвестный тип фигуры в строке {lineCounter}.");
             }
+        }
+        else
+        {
+            Console.WriteLine($"Ошибка: Недостаточно параметров для команды 'add' в строке {lineCounter}.");
         }
     }
 
-    private bool CheckCondition(Figure figure, string condition)
+    private static void RemFigure(string[] commandParts, int lineCounter, Container container, string condition)
     {
-        string[] conditionParts = condition.Split(' ');
-        string propertyName = conditionParts[0];
-        string comparisonOperator = conditionParts[1];
+        int CommandRemoveByConditionLen = 4;
+        int CommandRemoveByTypeLen = 2;
 
-        var property = figure.GetType().GetProperty(propertyName, BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance);
-
-        if (property == null)
+        if (commandParts.Length == CommandRemoveByConditionLen)
         {
-            return false;
-        }
+            string[] conditionParts = condition.Split(' ');
+            string propertyName = conditionParts[0];
+            string op = conditionParts[1];
+            string value = conditionParts[2];
 
-        object propertyValue = property.GetValue(figure);
-
-        if (propertyName.ToLower() == "owner")
-        {
-            string ownerValue = conditionParts[2];
-            switch (comparisonOperator)
+            if ((propertyName == "owner" || propertyName == "density" || propertyName == "radius" || propertyName == "a" || propertyName == "b" || propertyName == "c" || propertyName == "x" || propertyName == "y" || propertyName == "z" || propertyName == "height")
+            & (op == "==" || op == "!=" || op == ">" || op == "<"))
             {
-                case "==":
-                    return Convert.ToString(propertyValue) == ownerValue;
-                case "!=":
-                    return Convert.ToString(propertyValue) != ownerValue;
-                default:
-                    return false;
-            }
-        }
-
-        if (double.TryParse(conditionParts[2].Replace(',', '.'), NumberStyles.Any, CultureInfo.InvariantCulture, out double numericValue))
-        {
-            switch (comparisonOperator)
-            {
-                case "==":
-                    return Convert.ToDouble(propertyValue) == numericValue;
-                case "!=":
-                    return Convert.ToDouble(propertyValue) != numericValue;
-                case ">":
-                    return Convert.ToDouble(propertyValue) > numericValue;
-                case "<":
-                    return Convert.ToDouble(propertyValue) < numericValue;
-                default:
-                    return false;
-            }
-        }
-
-        return false;
-    }
-
-
-    public void RemoveFiguresByType(string figureType, int lineNumber)
-    {
-        Node current = head;
-        while (current != null)
-        {
-            if (current.Figure.GetType().Name.ToLower() == figureType.ToLower())
-            {
-                current.Figure.Print($"Deleted because type is {figureType}");
-                Node nodeToRemove = current;
-                current = current.Next;
-                RemoveNode(nodeToRemove);
+                container.RemoveFiguresByCondition(condition, lineCounter);
             }
             else
             {
-                current = current.Next;
+                Console.WriteLine($"Ошибка: Неверное свойство или оператор стравнения для условия удаления в строке {lineCounter}.");
             }
         }
-    }
-
-    public void PrintFigures()
-    {
-        Node current = head;
-        while (current != null)
+        else if (commandParts.Length == CommandRemoveByTypeLen)
         {
-            current.Figure.Print();
-            current = current.Next;
-        }
-    }
+            string figureType = commandParts[1];
 
-    private void RemoveNode(Node nodeToRemove)
-    {
-        if (nodeToRemove.Prev != null)
-        {
-            nodeToRemove.Prev.Next = nodeToRemove.Next;
+            if (figureType.ToLower() == "cylinder" || figureType.ToLower() == "sphere" || figureType.ToLower() == "parallelepiped")
+            {
+                container.RemoveFiguresByType(figureType, lineCounter);
+            }
+            else
+            {
+                Console.WriteLine($"Ошибка: Неверный тип фигуры для условия удаления в строке {lineCounter}.");
+            }
         }
         else
         {
-            head = nodeToRemove.Next;
+            Console.WriteLine($"Ошибка: Неверное количество параметров для команды 'rem' в строке {lineCounter}.");
         }
-
-        if (nodeToRemove.Next != null)
-        {
-            nodeToRemove.Next.Prev = nodeToRemove.Prev;
-        }
-        else
-        {
-            tail = nodeToRemove.Prev;
-        }
-
-        nodeToRemove.Figure = null;
-        nodeToRemove = null;
     }
-}
 
-class Program
-{
-
-    static void Main()
+    private static void OpenFile()
     {
-        Container container = new Container();
 
         using (StreamReader inputFile = new StreamReader("data.txt"))
         {
@@ -261,144 +141,59 @@ class Program
                 Console.Error.WriteLine("Не удалось открыть файл 'data.txt'");
                 return;
             }
+            else
+            {
+                ReadFile(inputFile);
+            } 
+        }
+    }
 
-            int lineCounter = 0;
-            string line;
+    private static void ReadFile(StreamReader inputFile)
+    {
+        Container container = new Container();
+        int lineCounter = 0;
+        string line;
 
-            while ((line = inputFile.ReadLine()) != null)
+        
+        while ((line = inputFile.ReadLine()) != null)
+        {
+            try
             {
                 lineCounter++;
 
                 string[] commandParts = line.Split(' ');
                 string command = commandParts[0];
+                
 
-                try
+                if (command == "add")
                 {
-                    if (command == "add")
-                    {
-                        if (commandParts.Length < 2)
-                        {
-                            Console.WriteLine($"Ошибка: Недостаточно параметров для команды 'add' в строке {lineCounter}.");
-                            continue;
-                        }
-
-                        string type = commandParts[1];
-
-                        if (type == "sphere" && commandParts.Length == 5)
-                        {
-                            if (double.TryParse(commandParts[2].Replace(',', '.'), NumberStyles.Any, CultureInfo.InvariantCulture, out double radius) &&
-                                double.TryParse(commandParts[3].Replace(',', '.'), NumberStyles.Any, CultureInfo.InvariantCulture, out double density))
-                            {
-                                string owner = commandParts[4];
-                                Sphere sphere = new Sphere(radius, density, owner);
-                                container.AddFigure(sphere);
-                            }
-                            else
-                            {
-                                Console.WriteLine($"Ошибка: Неверные числовые параметры для команды 'add sphere' в строке {lineCounter}.");
-                            }
-                        }
-                        else if (type == "parallelepiped" && commandParts.Length == 7)
-                        {
-                            if (double.TryParse(commandParts[2].Replace(',', '.'), NumberStyles.Any, CultureInfo.InvariantCulture, out double a) &&
-                                double.TryParse(commandParts[3].Replace(',', '.'), NumberStyles.Any, CultureInfo.InvariantCulture, out double b) &&
-                                double.TryParse(commandParts[4].Replace(',', '.'), NumberStyles.Any, CultureInfo.InvariantCulture, out double c) &&
-                                double.TryParse(commandParts[5].Replace(',', '.'), NumberStyles.Any, CultureInfo.InvariantCulture, out double density))
-                            {
-                                string owner = commandParts[6];
-                                Parallelepiped parallelepiped = new Parallelepiped(a, b, c, density, owner);
-                                container.AddFigure(parallelepiped);
-                            }
-                            else
-                            {
-                                Console.WriteLine($"Ошибка: Неверные числовые параметры для команды 'add parallelepiped' в строке {lineCounter}.");
-                            }
-                        }
-                        else if (type == "cylinder" && commandParts.Length == 9)
-                        {
-                            if (double.TryParse(commandParts[2].Replace(',', '.'), NumberStyles.Any, CultureInfo.InvariantCulture, out double x) &&
-                                double.TryParse(commandParts[3].Replace(',', '.'), NumberStyles.Any, CultureInfo.InvariantCulture, out double y) &&
-                                double.TryParse(commandParts[4].Replace(',', '.'), NumberStyles.Any, CultureInfo.InvariantCulture, out double z) &&
-                                double.TryParse(commandParts[5].Replace(',', '.'), NumberStyles.Any, CultureInfo.InvariantCulture, out double radius) &&
-                                double.TryParse(commandParts[6].Replace(',', '.'), NumberStyles.Any, CultureInfo.InvariantCulture, out double height) &&
-                                double.TryParse(commandParts[7].Replace(',', '.'), NumberStyles.Any, CultureInfo.InvariantCulture, out double density))
-                            {
-                                string owner = commandParts[8];
-                                Cylinder cylinder = new Cylinder(x, y, z, radius, height, density, owner);
-                                container.AddFigure(cylinder);
-                            }
-                            else
-                            {
-                                Console.WriteLine($"Ошибка: Неверные числовые параметры для команды 'add cylinder' в строке {lineCounter}.");
-                            }
-                        }
-                        else
-                        {
-                            Console.WriteLine($"Ошибка: Неизвестный тип фигуры или недостаточно параметров для команды 'add' в строке {lineCounter}.");
-                        }
-                    }
-                    else if (command == "rem")
-                    {
-                        if (commandParts.Length == 4)
-                        {
-                            string condition = line.Substring(command.Length + 1);
-
-                            string[] conditionParts = condition.Split(' ');
-                            string propertyName = conditionParts[0];
-                            string op = conditionParts[1];
-                            string value = conditionParts[2];
-
-                            if ((propertyName == "owner" || propertyName == "density" || propertyName == "radius" || propertyName == "a" || propertyName == "b" || propertyName == "c" || propertyName == "x" || propertyName == "y" || propertyName == "z" || propertyName == "height")
-                            & (op == "==" || op == "!=" || op == ">" || op == "<"))
-                            {
-                                container.RemoveFiguresByCondition(condition, lineCounter);
-                            }
-                            else
-                            {
-                                Console.WriteLine($"Ошибка: Неверное свойство или оператор стравнения для условия удаления в строке {lineCounter}.");
-                            }
-                        }
-                        else if (commandParts.Length == 2)
-                        {
-                            string figureType = commandParts[1];
-
-                            if (figureType.ToLower() == "cylinder" || figureType.ToLower() == "sphere" || figureType.ToLower() == "parallelepiped")
-                            {
-                                container.RemoveFiguresByType(figureType, lineCounter);
-                            }
-                            else
-                            {
-                                Console.WriteLine($"Ошибка: Неверный тип фигуры для условия удаления в строке {lineCounter}.");
-                            }
-                        }
-                        else
-                        {
-                            Console.WriteLine($"Ошибка: Неверное количество параметров для команды 'rem' в строке {lineCounter}.");
-                            continue;
-                        }
-                    }
-                    else if (command == "print")
-                    {
-                        container.PrintFigures();
-                        Console.WriteLine();
-                    }
-                    else
-                    {
-                        Console.WriteLine($"Ошибка: Неизвестная команда \"{command}\" в строке {lineCounter}.");
-                        continue;
-                    }
+                    AddFigure(commandParts, lineCounter, container);
                 }
-                catch (FormatException)
+                else if (command == "rem")
                 {
-                    Console.WriteLine($"Ошибка: Неверный числовой параметр в строке {lineCounter}.");
+                    string condition = line.Substring(command.Length + 1);
+                    RemFigure(commandParts, lineCounter, container, condition);
                 }
-                catch (Exception ex)
+                else if (command == "print")
                 {
-                    Console.WriteLine($"Ошибка при обработке строки {lineCounter}: {ex.Message}");
+                    container.PrintFigures();
+                    Console.WriteLine();
+                }
+                else
+                {
+                    Console.WriteLine($"Ошибка: Неизвестная команда \"{command}\" в строке {lineCounter}.");
                 }
             }
-
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка при обработке строки {lineCounter}, сообщение: {ex.Message}");
+            }
         }
         Console.ReadKey();  //test
+    }
+
+    public static void Main()
+    {
+            OpenFile();
     }
 }
